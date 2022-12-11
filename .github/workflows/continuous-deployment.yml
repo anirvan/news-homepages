@@ -5,10 +5,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: true
-
 jobs:
   lint-python:
     name: Lint Python code
@@ -73,9 +69,7 @@ jobs:
 
       - id: install-playwright
         name: Install Playwright
-        run: |
-            pipenv run python -m playwright install
-#            pipenv run python -m playwright install-deps
+        run: pipenv run python -m playwright install
         shell: bash
 
       - id: test
