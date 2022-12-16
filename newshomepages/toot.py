@@ -1,11 +1,12 @@
 import os
 import time
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-import pytz
 import click
+import pytz
 from mastodon import Mastodon
+from rich import print
 from slugify import slugify
 
 from . import utils
@@ -24,7 +25,7 @@ def single(handle: str, input_dir: str):
     """Toot a single source."""
     # Pull the source’s metadata
     data = utils.get_site(handle)
-    print(f"Tooting {data['handle']}")
+    print(f"🐘 Tooting {data['handle']}")
 
     # Connect to Twitter
     api = get_mastodon_client()
@@ -47,7 +48,7 @@ More: https://palewi.re/docs/news-homepages/sites/{data['handle'].lower()}.html"
     image_path = input_path / f"{handle.lower()}.jpg"
 
     # Upload the image
-    alt_text= f"The {data['name']} homepage at {now_local.strftime('%-I:%M %p')} in {data['location']}"
+    alt_text = f"The {data['name']} homepage at {now_local.strftime('%-I:%M %p')} in {data['location']}"
     media_obj = api.media_post(image_path, description=alt_text)
 
     # Make the tweet
@@ -61,7 +62,7 @@ def bundle(slug: str, input_dir: str):
     """Toot sources in batches of four."""
     # Pull the source metadata
     bundle = utils.get_bundle(slug)
-    print(f"Tweeting {bundle['name']}")
+    print(f"🐘 Tooting {bundle['name']}")
 
     # Set the input directory
     input_path = Path(input_dir)
@@ -93,13 +94,13 @@ def bundle(slug: str, input_dir: str):
         media_obj = api.media_post(image_path, description=alt_text)
 
         # Add it to our list
-        media_list.append(media_obj['id'])
+        media_list.append(media_obj["id"])
 
     # Break it into chunks of four
     chunk_list = utils.chunk(media_list, 4)
 
     # Loop through the chunks
-    parent_status_id = None
+    parent_status = None
     for i, chunk in enumerate(chunk_list):
         # Set the headline, if it's the first tweet in the thread
         if i == 0:
@@ -116,15 +117,16 @@ def bundle(slug: str, input_dir: str):
         if i == 0:
             status = api.status_post(status, media_ids=chunk)
         else:
+            assert parent_status
             status = api.status_post(
-                status, media_ids=chunk, in_reply_to_id=parent_status_id
+                status, media_ids=chunk, in_reply_to_id=parent_status["id"]
             )
 
         # Pause to let it happen
         time.sleep(3)
 
         # Set the parent id for the next loop iteration
-        parent_status_id = status['id']
+        parent_status = status
 
 
 def get_mastodon_client():
@@ -135,3 +137,7 @@ def get_mastodon_client():
         access_token=os.getenv("MASTODON_ACCESS_TOKEN"),
         api_base_url="https://mastodon.palewi.re",
     )
+
+
+if __name__ == "__main__":
+    cli()
