@@ -75,6 +75,7 @@ setup(
             "newshomepages-site=newshomepages.site:cli",
             "newshomepages-slack=newshomepages.slack:cli",
             "newshomepages-telegrammer=newshomepages.telegrammer:cli",
+            "newshomepages-toot=newshomepages.toot:cli",
             "newshomepages-tweet=newshomepages.tweet:cli",
             "newshomepages-wayback=newshomepages.wayback:cli",
         ],
@@ -108,6 +109,7 @@ setup(
         "storysniffer",
         "spacy",
         "spectra",
+        "Mastodon.py",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

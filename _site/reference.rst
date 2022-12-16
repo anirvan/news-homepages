@@ -70,6 +70,10 @@ Commands
    :prog: telegrammer
    :nested: full
 
+.. click:: newshomepages.toot:cli
+   :prog: toot
+   :nested: full
+
 .. click:: newshomepages.tweet:cli
    :prog: tweet
    :nested: full

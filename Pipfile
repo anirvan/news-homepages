@@ -33,6 +33,7 @@ retry = "*"
 storysniffer = "*"
 spacy = "*"
 spectra = "*"
+"mastodon.py" = "*"
 
 [dev-packages]
 pre-commit = "*"
