@@ -128,3 +128,16 @@ def test_get_url():
     utils.get_json_url(
         "https://archive.org/download/signalcleveland-2022/signalcleveland-2022-11-17T02%3A50%3A58.280867-05%3A00.wayback.json"
     )
+
+
+def test_chunk():
+    """Test the chunk utility."""
+    assert len(utils.chunk([1, 2, 3, 4, 5], 2)) == 3
+    assert len(utils.chunk([1, 2, 3, 4, 5], 5)) == 1
+    assert len(utils.chunk([1, 2, 3, 4, 5], 4)) == 2
+
+
+def test_batch():
+    """Test the batch utility."""
+    assert len(list(utils.batch([1, 2, 3, 4, 5], 2))) == 2
+    assert len(list(utils.batch([1, 2, 3, 4, 5], 1))) == 1
