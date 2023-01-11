@@ -5,10 +5,10 @@ from collections import Counter
 from pathlib import Path
 
 import click
+import pandas as pd
 import spacy
 import storysniffer
 import tldextract
-import pandas as pd
 from rich import print
 from rich.progress import track
 
