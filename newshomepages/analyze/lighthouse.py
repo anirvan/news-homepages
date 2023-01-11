@@ -59,13 +59,14 @@ def lighthouse(output_dir: str = "./"):
     qualified_df = qualified_df[~qualified_df.handle.isin(blacklist)].copy()
 
     # Aggregate descriptive statistics for each metric
+    stats_list = ["count", "median", "mean", "min", "max", "std"]
     agg_df = qualified_df.groupby("handle").agg(
-        {
-            "performance": ["count", "median", "mean", "min", "max", "std"],
-            "accessibility": ["count", "median", "mean", "min", "max", "std"],
-            "seo": ["count", "median", "mean", "min", "max", "std"],
-            "best_practices": ["count", "median", "mean", "min", "max", "std"],
-        }
+        dict(
+            performance=stats_list,
+            accessibility=stats_list,
+            seo=stats_list,
+            best_practices=stats_list,
+        )
     )
 
     # Flatten the dataframe
@@ -91,7 +92,8 @@ def lighthouse(output_dir: str = "./"):
     )
 
     # Write the results
-    flat_df.reset_index().to_csv(output_path / "lighthouse-analysis.csv", index=False)
+    output_list = flat_df.reset_index().to_dict(orient="records")
+    utils.write_csv(output_list, output_path / "lighthouse-analysis.csv")
 
 
 def _color_code(val):
