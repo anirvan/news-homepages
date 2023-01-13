@@ -71,6 +71,12 @@ endef
 # Commands
 #
 
+install: ## Install the development environment
+	$(call banner,      🛠️ Installing 🛠️)
+	@pipenv install --dev
+	@$(PIPENV) pre-commit install
+	@$(PIPENV) $(PYTHON) playwright install
+
 
 site: ## Build the site
 	$(call banner,    🏗️ Building site 🏗️)
@@ -136,3 +142,4 @@ help: ## Show this help. Example: make help
         lint \
         mypy \
         test \
+		install
