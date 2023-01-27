@@ -26,6 +26,7 @@ EXTENSIONS_PATH = THIS_DIR / "extensions"
 EXTRACT_DIR = THIS_DIR.parent / "extracts"
 NOTEBOOKS_DIR = THIS_DIR.parent / "notebooks"
 SITE_DIR = THIS_DIR.parent / "_site"
+BIN_DIR = THIS_DIR / "bin"
 
 # Regular expressions
 LEADING_UNDERSCORES = re.compile("^(_+)")
@@ -749,6 +750,8 @@ def _get_common_blocking_javascript() -> str:
         styleSheet.innerText = '{target_str} {{ display: none !important; }}';
         document.head.appendChild(styleSheet);
      """
+
+
 
 
 def _load_new_page_disable_javascript(
