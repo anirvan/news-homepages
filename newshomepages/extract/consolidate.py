@@ -91,7 +91,7 @@ def consolidate(
         qualified_files = [
             p
             for p in item_data["files"]
-            if (handle.lower() in p["name"].lower() and p["format"] in ["JSON", "JPEG"])
+            if (handle.lower() in p["name"].lower() and p["format"] in ["JSON", "JPEG", "HTML"])
         ]
 
         # Loop through them
