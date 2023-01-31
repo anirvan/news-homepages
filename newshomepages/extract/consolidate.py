@@ -117,18 +117,26 @@ def consolidate(
     hyperlinks_list = []
     lighthouse_list = []
     wayback_list = []
+    html_list = []
     print("🪆 Extracting files")
     for f in track(file_list):
-        if f["file_name"].endswith(".jpg"):
+        name = f['file_name']
+        if name.endswith(".jpg"):
+            if 'fullpage' in name:
+                f['type'] = 'fullpage'
+            else:
+                f['type'] = 'cropped'
             screenshot_list.append(f)
-        elif "accessibility" in f["file_name"]:
+        elif "accessibility" in name:
             a11y_list.append(f)
-        elif "hyperlinks" in f["file_name"]:
+        elif "hyperlinks" in name:
             hyperlinks_list.append(f)
-        elif "lighthouse" in f["file_name"]:
+        elif "lighthouse" in name:
             lighthouse_list.append(f)
-        elif "wayback" in f["file_name"]:
+        elif "wayback" in name:
             wayback_list.append(f)
+        elif name.endswith(".html"):
+            html_list.append(f)
         else:
             raise ValueError(f"File name {f['file_name']} doesn't have an output file")
 
@@ -138,6 +146,7 @@ def consolidate(
     utils.write_csv(hyperlinks_list, output_path / "hyperlink-files.csv")
     utils.write_csv(lighthouse_list, output_path / "lighthouse-files.csv")
     utils.write_csv(wayback_list, output_path / "wayback-files.csv")
+    utils.write_csv(html_list, output_path / "html-files.csv")
 
     # Delete the zip file
     zip_path = output_path / "latest.zip"
