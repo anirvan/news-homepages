@@ -84,6 +84,7 @@ Field | Description
 `size` | The size of the file in bytes
 `md5` | A [checksum](https://en.wikipedia.org/wiki/Checksum) for the file created using [md5](https://en.wikipedia.org/wiki/Md5sum) hashing
 `sha1` | A [checksum](https://en.wikipedia.org/wiki/Checksum) for the file created using [sh1](https://en.wikipedia.org/wiki/Sha1sum) hashing
+`type` | The type of screenshot. Either `cropped` or `fullpage`.
 
 
 ## accessibility-files.csv
@@ -91,6 +92,23 @@ Field | Description
 The [accessibility information](https://developer.mozilla.org/en-US/docs/Glossary/Accessibility_tree) related to HTML elements in the page, captured and stored in the Internet Archive.
 
 URL: [archive.org/download/news-homepages-extracts/accessibility-files.csv](https://archive.org/download/news-homepages-extracts/accessibility-files.csv)
+
+Field | Description
+:---- | :----------
+`identifier` | The unique identifier created by Internet Archive
+`handle` | The Twitter handle of the outlet. Can be used to merge with other files
+`file_name` | The name of the file in the Internet Archive
+`url` | The URL of the file
+`mtime` | The time the file was last modified by the Internet Archive in UTC time
+`size` | The size of the file in bytes
+`md5` | A [checksum](https://en.wikipedia.org/wiki/Checksum) for the file created using [md5](https://en.wikipedia.org/wiki/Md5sum) hashing
+`sha1` | A [checksum](https://en.wikipedia.org/wiki/Checksum) for the file created using [sh1](https://en.wikipedia.org/wiki/Sha1sum) hashing
+
+## html-files.csv
+
+The HTML files saved in the Internet Archive.
+
+URL: [archive.org/download/news-homepages-extracts/html-files.csv](https://archive.org/download/news-homepages-extracts/html-files.csv)
 
 Field | Description
 :---- | :----------
