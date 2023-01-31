@@ -138,7 +138,7 @@ def consolidate(
         elif name.endswith(".html"):
             html_list.append(f)
         else:
-            raise ValueError(f"File name {f['file_name']} doesn't have an output file")
+            raise ValueError(f"File name {name} doesn't have an output file")
 
     # Write those out too
     utils.write_csv(screenshot_list, output_path / "screenshot-files.csv")
