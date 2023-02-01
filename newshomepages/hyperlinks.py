@@ -5,9 +5,10 @@ import click
 from playwright.sync_api import sync_playwright
 from playwright.sync_api._generated import BrowserContext
 from retry import retry
-from rich import print
+# from rich import print
 
-from . import utils
+# from . import utils
+import utils
 
 get_link_divs_js = '''
     var as = document.querySelectorAll('a')
@@ -46,7 +47,7 @@ def get_bounding_box_info(page):
                 var seen_links = {};
                 links = links
                     .map(function(a) {return {
-                        'href': a.href,
+                         'href': a.href,
                          'link_text' : get_text_of_node(a), 
                         }
                     } )
@@ -66,6 +67,17 @@ def get_bounding_box_info(page):
                         a['height'] = b['height']
                         a['all_text'] = get_text_of_node(node)
                         a['css_attributes'] = getComputedStyle(node)
+                        a['img'] = Array.from(a.querySelectorAll('img')).map(function(img){
+                            var img_bb = img.getBoundingClientRect()
+                            return {
+                            'src': img.src, 
+                            'alt': img.alt,
+                            'x': img_bb['x'],
+                            'y': img_bb['y'],
+                            'width': img_bb['width'],
+                            'height': img_bb['height']
+                            }
+                        })
                         all_links.push(a)
                 })
             })

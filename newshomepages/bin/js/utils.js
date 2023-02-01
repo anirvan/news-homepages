@@ -159,16 +159,23 @@ function get_valid_url(href) {
     }
 }
 
-function get_url_parts(href){
-    `Get parts of the URL in case the site is not English`
-    var url = get_valid_url(href)
+function banned_host(url){
     var host = url.hostname
     var domain = psl.parse(host).sld
     if (DOMAIN_BLACKLIST.indexOf(domain) != -1)
-        return false
+        return true
 
     var subdomain = psl.parse(host).subdomain
     if (SUBDOMAIN_BLACKLIST.indexOf(subdomain) != -1)
+        return true
+
+    return false
+}
+
+function get_url_parts(href){
+    `Get parts of the URL in case the site is not English`
+    var url = get_valid_url(href)
+    if (banned_host(url))
         return false
 
     var path = url.pathname
