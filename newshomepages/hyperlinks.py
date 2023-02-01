@@ -70,12 +70,12 @@ def get_bounding_box_info(page):
                         a['img'] = Array.from(a.querySelectorAll('img')).map(function(img){
                             var img_bb = img.getBoundingClientRect()
                             return {
-                            'src': img.src, 
-                            'alt': img.alt,
-                            'x': img_bb['x'],
-                            'y': img_bb['y'],
-                            'width': img_bb['width'],
-                            'height': img_bb['height']
+                            'img_src': img.src, 
+                            'img_text': img.alt,
+                            'img_x': img_bb['x'],
+                            'img_y': img_bb['y'],
+                            'img_width': img_bb['width'],
+                            'img_height': img_bb['height']
                             }
                         })
                         all_links.push(a)
