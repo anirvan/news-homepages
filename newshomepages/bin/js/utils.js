@@ -101,11 +101,16 @@ function get_highest_singular_parent(i, as){
     var curr_parent = document
     for (let j = 0; j < as.length; j++){
       if ((i != j) & (as[i].href != as[j].href)) {
-        var common_not_parent = get_common_parent(a, as[j], return_common=false)
-        if (is_smaller_child(common_not_parent, curr_parent)){
-          curr_parent = common_not_parent
+          if (a.is_long){
+              if (! as[j].is_long){
+                  continue
+              }
+          }
+          var common_not_parent = get_common_parent(a.node, as[j].node, return_common=false)
+          if (is_smaller_child(common_not_parent, curr_parent)){
+            curr_parent = common_not_parent
+          }
         }
-      }
     }
     return curr_parent
 }
@@ -122,4 +127,51 @@ function get_text_of_node(node){
       output_text = output_text + ' ' + textnode.textContent
     }
     return output_text
+}
+
+
+var DOMAIN_BLACKLIST = [
+    "google",
+    "twitter",
+    "facebook",
+    "doubleclick",
+    "eventbrite",
+    "youtube",
+    "vimeo",
+    "instagram",
+    "ceros"
+]
+
+var SUBDOMAIN_BLACKLIST = [
+    "careers",
+    "mail",
+    "account",
+    "events",
+]
+
+function get_valid_url(href) {
+    `Constructs a URL class out of an href. Flexible in case the href is just the path.`
+    try {
+        return new URL(href);
+    }
+    catch(e){
+        return new URL(href, window.location.href)
+    }
+}
+
+function get_url_parts(href){
+    `Get parts of the URL in case the site is not English`
+    var url = get_valid_url(href)
+    var host = url.hostname
+    var domain = psl.parse(host).sld
+    if (DOMAIN_BLACKLIST.indexOf(domain) != -1)
+        return false
+
+    var subdomain = psl.parse(host).subdomain
+    if (SUBDOMAIN_BLACKLIST.indexOf(subdomain) != -1)
+        return false
+
+    var path = url.pathname
+    path = path.split(/[-/:.]/).filter(function(d){return d != ''})
+    return path.length > 5
 }
