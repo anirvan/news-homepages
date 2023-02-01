@@ -7,7 +7,8 @@ from playwright.sync_api._generated import BrowserContext
 from retry import retry
 from rich import print
 
-from . import utils
+import utils
+# from . import utils
 
 
 instantiate_model_js = '''
@@ -57,23 +58,47 @@ def get_bounding_box_info(page):
         function () {
             var all_links = []
             a_top_nodes.forEach(function(node){
-                var links = Array.from(node.querySelectorAll('a')).map(function(a){ return a })
+                var links = Array.from(node.querySelectorAll('a'))
                 if ((links.length == 0) & (node.nodeName === 'A')){
                     links = [node]
                 }
-                links = links.map(function(a){return {'url': a.href, 'link_text': get_text_of_node(a)}})
-
-                links.forEach(function(a){
-                    var b = node.getBoundingClientRect()
-                    a['x'] = b['x']
-                    a['y'] = b['y']
-                    a['width'] = b['width']
-                    a['height'] = b['height']
-                    a['all_text'] = get_text_of_node(node)
-                    all_links.push(a)
+                
+                var seen_links = {};
+                links = links
+                    .map(function(a) {return {
+                        'href': a.href,
+                         'link_text' : get_text_of_node(a), 
+                         'is_article': predictor.get_prediction(a.href)
+                        }
+                    } )
+                    .filter(function(a){return a.is_article})
+                    .sort((a, b) => { return  b.link_text.length - a.link_text.length } )
+                    .filter(function(a){
+                        if (!(a.href in seen_links)) {
+                            seen_links[a.href] = true;
+                            return true
+                        }
+                        return false 
+                    })
+                    .forEach(function(a){
+                        var b = node.getBoundingClientRect() // get the bounding box around the entire defined node.
+                        a['x'] = b['x']
+                        a['y'] = b['y']
+                        a['width'] = b['width']
+                        a['height'] = b['height']
+                        a['all_text'] = get_text_of_node(node)
+                        all_links.push(a)
                 })
             })
-            return all_links
+            
+            seen_all_links = {}
+            return all_links.filter(function(a){
+                if (!([a.href, a.x, a.y] in seen_all_links)) {
+                    seen_all_links[[a.href, a.x, a.y]] = true;
+                    return true;
+                }
+                return false;
+            })
         }
     ''')
 

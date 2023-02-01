@@ -65,6 +65,11 @@ var LRUrlPredictor = class {
         if (class_label == undefined)
             class_label = true
 
+        if (url.indexOf('https://web.archive.org') != -1 ){
+            url = url.split('https://web.archive.org')[1]
+            url = 'http' + url.split('http')[1]
+        }
+
         let clean_str = new URL(url).pathname
         let n_grams = _char_ngrams(clean_str, this.ngram_range)
         let vec = this.get_vocab_vectors(n_grams)
