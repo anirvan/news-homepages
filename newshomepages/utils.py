@@ -752,8 +752,6 @@ def _get_common_blocking_javascript() -> str:
      """
 
 
-
-
 def _load_new_page_disable_javascript(
     context: BrowserContext,
     url: str,
