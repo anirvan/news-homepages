@@ -35,8 +35,7 @@ js_to_spotcheck = '''
 
 def get_bounding_box_info(page):
     """Get bounding box and image information for each link box."""
-
-    bounding_boxes = page.evaluate('''    
+    bounding_boxes = page.evaluate('''
         function () {
             var all_links = []
             a_top_nodes.forEach(function(node){
@@ -49,7 +48,7 @@ def get_bounding_box_info(page):
                 links = links
                     .map(function(a) {return {
                          'href': a.href,
-                         'link_text' : get_text_of_node(a), 
+                         'link_text' : get_text_of_node(a),
                          'img': Array.from(a.querySelectorAll('img'))
                         }
                     } )
@@ -59,7 +58,7 @@ def get_bounding_box_info(page):
                             seen_links[a.href] = true;
                             return true
                         }
-                        return false 
+                        return false
                     })
                     .forEach(function(a){
                         var b = node.getBoundingClientRect() // get the bounding box around the entire defined node.
@@ -71,11 +70,11 @@ def get_bounding_box_info(page):
                         var css_attrs = getComputedStyle(node)
                         css_attrs = Object.entries(css_attrs)
                                           .filter(function(d){return isNaN(parseInt(d[0])) })
-                        a['css_attributes'] = Object.fromEntries(css_attrs) 
+                        a['css_attributes'] = Object.fromEntries(css_attrs)
                         a['img'] = a['img'].map(function(img){
                             var img_bb = img.getBoundingClientRect()
                             return {
-                                'img_src': img.src, 
+                                'img_src': img.src,
                                 'img_text': img.alt.trim(),
                                 'img_x': img_bb['x'],
                                 'img_y': img_bb['y'],
