@@ -126,9 +126,8 @@ function get_text_of_node(node){
     while (textnode = iter.nextNode()) {
       output_text = output_text + ' ' + textnode.textContent
     }
-    return output_text
+    return output_text.trim()
 }
-
 
 var DOMAIN_BLACKLIST = [
     "google",

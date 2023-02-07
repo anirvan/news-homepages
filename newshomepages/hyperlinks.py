@@ -50,6 +50,7 @@ def get_bounding_box_info(page):
                     .map(function(a) {return {
                          'href': a.href,
                          'link_text' : get_text_of_node(a), 
+                         'img': Array.from(a.querySelectorAll('img'))
                         }
                     } )
                     .sort((a, b) => { return  b.link_text.length - a.link_text.length } )
@@ -67,16 +68,19 @@ def get_bounding_box_info(page):
                         a['width'] = b['width']
                         a['height'] = b['height']
                         a['all_text'] = get_text_of_node(node)
-                        a['css_attributes'] = getComputedStyle(node)
-                        a['img'] = Array.from(a.querySelectorAll('img')).map(function(img){
+                        var css_attrs = getComputedStyle(node)
+                        css_attrs = Object.entries(css_attrs)
+                                          .filter(function(d){return isNaN(parseInt(d[0])) })
+                        a['css_attributes'] = Object.fromEntries(css_attrs) 
+                        a['img'] = a['img'].map(function(img){
                             var img_bb = img.getBoundingClientRect()
                             return {
-                            'img_src': img.src, 
-                            'img_text': img.alt,
-                            'img_x': img_bb['x'],
-                            'img_y': img_bb['y'],
-                            'img_width': img_bb['width'],
-                            'img_height': img_bb['height']
+                                'img_src': img.src, 
+                                'img_text': img.alt.trim(),
+                                'img_x': img_bb['x'],
+                                'img_y': img_bb['y'],
+                                'img_width': img_bb['width'],
+                                'img_height': img_bb['height']
                             }
                         })
                         all_links.push(a)
@@ -148,7 +152,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
         context.close()
 
     # Write out the data
-    output_path = Path(output_dir) / f"{site['handle'].lower()}.hyperlinks-with-bb.json"
+    output_path = Path(output_dir) / f"{site['handle'].lower()}.hyperlinks.json"
     utils.write_json(link_list, output_path)
 
 
