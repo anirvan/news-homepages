@@ -14,14 +14,14 @@ get_link_divs_js = '''
     as = Array.from(as)
             .filter(function(a) { return a.href !== ''}).filter(function(a){return a.href !== undefined; })
             .map(function(a) {return {'node': a, 'href': a.href, 'is_long': get_url_parts(a.href) }} )
-    
+    //
     var a_counts = {}
     as.forEach(function(a, i){
         a_counts[a.href] = a_counts[a.href] || []
         a_counts[a.href].push(i)
     })
-    
-    var a_top_nodes = as.map(function(a, i){ 
+    //
+    var a_top_nodes = as.map(function(a, i){
         return get_highest_singular_parent(i, as)
     })
 '''
@@ -34,6 +34,8 @@ js_to_spotcheck = '''
 
 
 def get_bounding_box_info(page):
+    """Get bounding box and image information for each link box."""
+
     bounding_boxes = page.evaluate('''    
         function () {
             var all_links = []
@@ -42,7 +44,7 @@ def get_bounding_box_info(page):
                 if ((links.length == 0) & (node.nodeName === 'A')){
                     links = [node]
                 }
-                
+                //
                 var seen_links = {};
                 links = links
                     .map(function(a) {return {
@@ -80,7 +82,7 @@ def get_bounding_box_info(page):
                         all_links.push(a)
                 })
             })
-            
+            //
             seen_all_links = {}
             return all_links.filter(function(a){
                 if (!([a.href, a.x, a.y] in seen_all_links)) {
