@@ -5,10 +5,9 @@ import click
 from playwright.sync_api import sync_playwright
 from playwright.sync_api._generated import BrowserContext
 from retry import retry
-# from rich import print
+from rich import print
 
-# from . import utils
-import utils
+from . import utils
 
 get_link_divs_js = '''
     var as = document.querySelectorAll('a')
@@ -117,11 +116,11 @@ def get_bounding_box_info(page):
 def load_helper_scripts(page):
     """Read and return Javascript code from a file. Convenience function."""
     utils_script = utils.BIN_DIR / "js" / "psl.min.js"
-    with open(utils_script ) as f:
+    with open(utils_script) as f:
         page.evaluate(f.read())
 
     utils_script = utils.BIN_DIR / "js" / "utils.js"
-    with open(utils_script ) as f:
+    with open(utils_script) as f:
         page.evaluate(f.read())
 
 
@@ -140,7 +139,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
         browser = p.chromium.launch(channel="chrome")
         context = browser.new_context(user_agent=utils.get_user_agent())
 
-        # Get lnks
+        # Get links
         link_list = _get_links(context, site, timeout=int(timeout))
 
         # Close the browser
