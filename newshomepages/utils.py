@@ -800,7 +800,6 @@ def _load_new_page_disable_javascript(
             time.sleep(1)
             scroll_height = page.evaluate("document.body.scrollHeight")
             current_iter += 1
-            print(current_iter)
         print("scrolling back up...")
         page.evaluate("scroll(0, 0)")
         time.sleep(1)
