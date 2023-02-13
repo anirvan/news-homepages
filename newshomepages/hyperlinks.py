@@ -8,126 +8,7 @@ from retry import retry
 from rich import print
 
 from . import utils
-
-get_link_divs_js = '''
-    var as = document.querySelectorAll('a')
-    as = Array.from(as)
-            .filter(function(a) { return a.href !== ''}).filter(function(a){return a.href !== undefined; })
-            .map(function(a) {return {'node': a, 'href': a.href, 'is_long': get_url_parts(a.href) }} )
-    //
-    var a_counts = {}
-    as.forEach(function(a, i){
-        a_counts[a.href] = a_counts[a.href] || []
-        a_counts[a.href].push(i)
-    })
-    //
-    var a_top_nodes = as.map(function(a, i){
-        return get_highest_singular_parent(i, as)
-    })
-'''
-
-js_to_spotcheck = '''
-    a_top_nodes.forEach(function(node){
-        node.setAttribute('style', 'border: 4px dotted blue !important;')
-    })
-'''
-
-
-def get_bounding_box_info(page):
-    """Get bounding box and image information for each link box."""
-    bounding_boxes = page.evaluate('''
-        function () {
-            var all_links = []
-            a_top_nodes.forEach(function(node){
-                var links = Array.from(node.querySelectorAll('a'))
-                if ((links.length == 0) & (node.nodeName === 'A')){
-                    links = [node]
-                }
-                //
-                var seen_links = {};
-                links = links
-                    .map(function(a) {return {
-                         'href': a.href,
-                         'link_text' : get_text_of_node(a),
-                         'img': Array.from(a.querySelectorAll('img'))
-                        }
-                    } )
-                    .sort((a, b) => { return  b.link_text.length - a.link_text.length } )
-                    .filter(function(a){
-                        if (!(a.href in seen_links)) {
-                            seen_links[a.href] = true;
-                            return true
-                        }
-                        return false
-                    })
-                    .forEach(function(a){
-                        var b = node.getBoundingClientRect() // get the bounding box around the entire defined node.
-                        a['x'] = b['x']
-                        a['y'] = b['y']
-                        a['width'] = b['width']
-                        a['height'] = b['height']
-                        a['all_text'] = get_text_of_node(node)
-                        var css_attrs = getComputedStyle(node)
-                        css_attrs = Object.entries(css_attrs)
-                                          .filter(function(d){return isNaN(parseInt(d[0])) })
-                        a['css_attributes'] = Object.fromEntries(css_attrs)
-                        a['img'] = a['img'].map(function(img){
-                            var img_bb = img.getBoundingClientRect()
-                            return {
-                                'img_src': img.src,
-                                'img_text': img.alt.trim(),
-                                'img_x': img_bb['x'],
-                                'img_y': img_bb['y'],
-                                'img_width': img_bb['width'],
-                                'img_height': img_bb['height']
-                            }
-                        })
-                        all_links.push(a)
-                })
-            })
-            //
-            seen_all_links = {}
-            return all_links.filter(function(a){
-                if (!([a.href, a.x, a.y] in seen_all_links)) {
-                    seen_all_links[[a.href, a.x, a.y]] = true;
-                    return true;
-                }
-                return false;
-            })
-        }
-    ''')
-
-    width = page.evaluate('''
-        Math.max(
-            document.documentElement["clientWidth"],
-            document.body["scrollWidth"],
-            document.documentElement["scrollWidth"],
-            document.body["offsetWidth"],
-            document.documentElement["offsetWidth"]
-        );
-    ''')
-
-    height = page.evaluate('''Math.max(
-        document.documentElement["clientHeight"],
-        document.body["scrollHeight"],
-        document.documentElement["scrollHeight"],
-        document.body["offsetHeight"],
-        document.documentElement["offsetHeight"]
-    );''')
-
-    return bounding_boxes, width, height
-
-
-def load_helper_scripts(page):
-    """Read and return Javascript code from a file. Convenience function."""
-    utils_script = utils.BIN_DIR / "js" / "psl.min.js"
-    with open(utils_script) as f:
-        page.evaluate(f.read())
-
-    utils_script = utils.BIN_DIR / "js" / "utils.js"
-    with open(utils_script) as f:
-        page.evaluate(f.read())
-
+from .utils_dom import get_bounding_box_info
 
 @click.command()
 @click.argument("handle")
@@ -164,20 +45,14 @@ def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
     # Go to the page
     page.goto(data["url"], timeout=timeout * 1000)
 
-    # load helper scripts into the page and get resources to run the rest of the scripts
-    load_helper_scripts(page)
-
-    # for each <a> on the page, get the upper-most child in the DOM that doesn't have any other links in the subtree
-    page.evaluate(get_link_divs_js)
-
     # retrieve this data from the page object
-    bb, w, h = get_bounding_box_info(page)
+    bb = get_bounding_box_info(page)
 
     # Close the page
     page.close()
 
     # Return the result
-    return {'bounding boxes': bb, 'page_width': w, 'page_height': h}
+    return bb
 
 
 if __name__ == "__main__":
