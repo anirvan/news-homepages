@@ -10,7 +10,6 @@ from rich import print
 from typing import List, Union, Dict
 
 from . import utils
-# import utils
 
 get_link_divs_js = '''
     var as = document.querySelectorAll('a')
@@ -98,7 +97,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
     # Start the browser
     with sync_playwright() as p:
         # Open a browser
-        browser = p.chromium.launch(channel="chrome", headless=False)
+        browser = p.chromium.launch(channel="chrome")
         context = browser.new_context(user_agent=utils.get_user_agent())
 
         # Get links
@@ -112,7 +111,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
     utils.write_json(link_list, output_path)
 
 
-@retry(tries=1, delay=5, backoff=2)
+@retry(tries=3, delay=5, backoff=2)
 def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
     print(f"Getting hyperlinks from {data['url']}")
     # Open a page
