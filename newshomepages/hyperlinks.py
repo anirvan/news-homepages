@@ -3,11 +3,14 @@ from pathlib import Path
 
 import click
 from playwright.sync_api import sync_playwright
+from playwright.sync_api import Locator
 from playwright.sync_api._generated import BrowserContext
 from retry import retry
 from rich import print
+from typing import List, Union, Dict
 
 from . import utils
+# import utils
 
 get_link_divs_js = '''
     var as = document.querySelectorAll('a')
@@ -26,97 +29,6 @@ get_link_divs_js = '''
     })
 '''
 
-js_to_spotcheck = '''
-    a_top_nodes.forEach(function(node){
-        node.setAttribute('style', 'border: 4px dotted blue !important;')
-    })
-'''
-
-
-def get_bounding_box_info(page):
-    """Get bounding box and image information for each link box."""
-    bounding_boxes = page.evaluate('''
-        function () {
-            var all_links = []
-            a_top_nodes.forEach(function(node){
-                var links = Array.from(node.querySelectorAll('a'))
-                if ((links.length == 0) & (node.nodeName === 'A')){
-                    links = [node]
-                }
-                //
-                var seen_links = {};
-                links = links
-                    .map(function(a) {return {
-                         'href': a.href,
-                         'link_text' : get_text_of_node(a),
-                         'img': Array.from(a.querySelectorAll('img'))
-                        }
-                    } )
-                    .sort((a, b) => { return  b.link_text.length - a.link_text.length } )
-                    .filter(function(a){
-                        if (!(a.href in seen_links)) {
-                            seen_links[a.href] = true;
-                            return true
-                        }
-                        return false
-                    })
-                    .forEach(function(a){
-                        var b = node.getBoundingClientRect() // get the bounding box around the entire defined node.
-                        a['x'] = b['x']
-                        a['y'] = b['y']
-                        a['width'] = b['width']
-                        a['height'] = b['height']
-                        a['all_text'] = get_text_of_node(node)
-                        var css_attrs = getComputedStyle(node)
-                        css_attrs = Object.entries(css_attrs)
-                                          .filter(function(d){return isNaN(parseInt(d[0])) })
-                        a['css_attributes'] = Object.fromEntries(css_attrs)
-                        a['img'] = a['img'].map(function(img){
-                            var img_bb = img.getBoundingClientRect()
-                            return {
-                                'img_src': img.src,
-                                'img_text': img.alt.trim(),
-                                'img_x': img_bb['x'],
-                                'img_y': img_bb['y'],
-                                'img_width': img_bb['width'],
-                                'img_height': img_bb['height']
-                            }
-                        })
-                        all_links.push(a)
-                })
-            })
-            //
-            seen_all_links = {}
-            return all_links.filter(function(a){
-                if (!([a.href, a.x, a.y] in seen_all_links)) {
-                    seen_all_links[[a.href, a.x, a.y]] = true;
-                    return true;
-                }
-                return false;
-            })
-        }
-    ''')
-
-    width = page.evaluate('''
-        Math.max(
-            document.documentElement["clientWidth"],
-            document.body["scrollWidth"],
-            document.documentElement["scrollWidth"],
-            document.body["offsetWidth"],
-            document.documentElement["offsetWidth"]
-        );
-    ''')
-
-    height = page.evaluate('''Math.max(
-        document.documentElement["clientHeight"],
-        document.body["scrollHeight"],
-        document.documentElement["scrollHeight"],
-        document.body["offsetHeight"],
-        document.documentElement["offsetHeight"]
-    );''')
-
-    return bounding_boxes, width, height
-
 
 def load_helper_scripts(page):
     """Read and return Javascript code from a file. Convenience function."""
@@ -127,6 +39,36 @@ def load_helper_scripts(page):
     utils_script = utils.BIN_DIR / "js" / "utils.js"
     with open(utils_script) as f:
         page.evaluate(f.read())
+
+
+def get_css_attrs(node: Locator) -> Dict[str, str]:
+    css_attrs = node.evaluate('''node => getComputedStyle(node)''')
+    return dict(filter(lambda x: not x[0].isdigit(), css_attrs.items()))
+
+
+def get_img_attrs(node: Locator) -> List[Dict[str, Union[str, int]]]:
+    output_img_data = []
+    imgs = node.locator('img').all()
+    for img in imgs:
+        output = {}
+        output['img_position'] = img.bounding_box()
+        output['img_src'] = img.evaluate('''node => node.src''')
+        output['img_text'] = img.evaluate('''node=> node.alt.trim()''')
+        output_img_data.append(output)
+    return output_img_data
+
+def get_bounding_boxes_fallback(page):
+    bounding_box_output = []
+    all_as = page.locator('a').all()
+    for a in all_as:
+        output = {}
+        output['position'] = a.bounding_box()
+        output['href'] = a.evaluate('a => a.href')
+        output['img'] = get_img_attrs(a)
+        output['css'] = get_css_attrs(a)
+        output['text'] = a.evaluate('a => get_text_of_node(a)')
+        bounding_box_output.append(output)
+    return bounding_box_output
 
 
 @click.command()
@@ -141,7 +83,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
     # Start the browser
     with sync_playwright() as p:
         # Open a browser
-        browser = p.chromium.launch(channel="chrome")
+        browser = p.chromium.launch(channel="chrome", headless=False)
         context = browser.new_context(user_agent=utils.get_user_agent())
 
         # Get links
@@ -155,7 +97,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
     utils.write_json(link_list, output_path)
 
 
-@retry(tries=3, delay=5, backoff=2)
+@retry(tries=1, delay=5, backoff=2)
 def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
     print(f"Getting hyperlinks from {data['url']}")
     # Open a page
@@ -164,20 +106,36 @@ def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
     # Go to the page
     page.goto(data["url"], timeout=timeout * 1000)
 
+    print('done loading...')
     # load helper scripts into the page and get resources to run the rest of the scripts
     load_helper_scripts(page)
 
-    # for each <a> on the page, get the upper-most child in the DOM that doesn't have any other links in the subtree
-    page.evaluate(get_link_divs_js)
-
     # retrieve this data from the page object
-    bb, w, h = get_bounding_box_info(page)
+    if False:
+        print('method 1')
+        # for each <a> on the page, get the upper most child in the DOM that doesn't have any other links in the subtree
+        page.evaluate(get_link_divs_js)
+        # get bounding boxes and other information for all links on the page
+        bounding_boxes = page.evaluate('''get_bounding_boxes_for_links_on_page(a_top_nodes)''')
+        method = 'full bounding boxes (method succeeded)'
+    else:
+        print('failing... fallback method')
+        bounding_boxes = get_bounding_boxes_fallback(page)
+        method = 'a-restricted bounding boxes (fallback method)'
+
+    page_width = page.evaluate('''get_page_width()''')
+    page_height = page.evaluate('''get_page_height()''')
 
     # Close the page
     page.close()
 
     # Return the result
-    return {'bounding boxes': bb, 'page_width': w, 'page_height': h}
+    return {
+        'link data': bounding_boxes,
+        'page_width': page_width,
+        'page_height': page_height,
+        'bounding box method': method
+    }
 
 
 if __name__ == "__main__":

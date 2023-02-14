@@ -181,3 +181,78 @@ function get_url_parts(href){
     path = path.split(/[-/:.]/).filter(function(d){return d != ''})
     return path.length > 5
 }
+
+
+function get_bounding_boxes_for_links_on_page(a_top_nodes){
+    var all_links = []
+    a_top_nodes.forEach(function(node){
+        var links = Array.from(node.querySelectorAll('a'))
+        if ((links.length == 0) & (node.nodeName === 'A')){
+            links = [node]
+        }
+        //
+        var seen_links = {};
+        links = links
+            .map(function(a) {return {
+                 'href': a.href,
+                 'link_text' : get_text_of_node(a),
+                 'img': Array.from(a.querySelectorAll('img'))
+                }
+            } )
+            .sort((a, b) => { return  b.link_text.length - a.link_text.length } )
+            .filter(function(a){
+                if (!(a.href in seen_links)) {
+                    seen_links[a.href] = true;
+                    return true
+                }
+                return false
+            })
+            .forEach(function(a){
+                a['position'] = node.getBoundingClientRect() // get the bounding box around the entire defined node.
+                a['text'] = get_text_of_node(node)
+                var css_attrs = getComputedStyle(node)
+                css_attrs = Object.entries(css_attrs)
+                                  .filter(function(d){return isNaN(parseInt(d[0])) })
+                a['css'] = Object.fromEntries(css_attrs)
+                a['img'] = a['img'].map(function(img){
+                    return {
+                        'img_position': img.getBoundingClientRect(),
+                        'img_src': img.src,
+                        'img_text': img.alt.trim(),
+                    }
+                })
+                all_links.push(a)
+        })
+    })
+    //
+    var seen_all_links = {}
+    return all_links.filter(function(a){
+        if (!([a.href, a.x, a.y] in seen_all_links)) {
+            seen_all_links[[a.href, a.x, a.y]] = true;
+            return true;
+        }
+        return false;
+    })
+    //
+    return all_links
+}
+
+function get_page_width(){
+    return Math.max(
+        document.documentElement["clientWidth"],
+        document.body["scrollWidth"],
+        document.documentElement["scrollWidth"],
+        document.body["offsetWidth"],
+        document.documentElement["offsetWidth"]
+    );
+}
+
+function get_page_height(){
+    return Math.max(
+        document.documentElement["clientHeight"],
+        document.body["scrollHeight"],
+        document.documentElement["scrollHeight"],
+        document.body["offsetHeight"],
+        document.documentElement["offsetHeight"]
+    );
+}
