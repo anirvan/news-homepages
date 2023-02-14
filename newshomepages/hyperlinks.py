@@ -62,11 +62,26 @@ def get_bounding_boxes_fallback(page):
     all_as = page.locator('a').all()
     for a in all_as:
         output = {}
-        output['position'] = a.bounding_box()
-        output['href'] = a.evaluate('a => a.href')
-        output['img'] = get_img_attrs(a)
-        output['css'] = get_css_attrs(a)
-        output['text'] = a.evaluate('a => get_text_of_node(a)')
+        try:
+            output['position'] = a.bounding_box()
+        except:
+            output['position'] = 'fallback method failed'
+        try:
+            output['href'] = a.evaluate('a => a.href')
+        except:
+            output['href'] = 'fallback method failed'
+        try:
+            output['img'] = get_img_attrs(a)
+        except:
+            output['img'] = 'fallback method failed'
+        try:
+            output['css'] = get_css_attrs(a)
+        except:
+            output['css'] = 'fallback method failed'
+        try:
+            output['text'] = a.evaluate('a => get_text_of_node(a)')
+        except:
+            output['text'] = 'fallback method failed'
         bounding_box_output.append(output)
     return bounding_box_output
 
@@ -111,14 +126,14 @@ def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
     load_helper_scripts(page)
 
     # retrieve this data from the page object
-    if False:
+    try:
         print('method 1')
         # for each <a> on the page, get the upper most child in the DOM that doesn't have any other links in the subtree
         page.evaluate(get_link_divs_js)
         # get bounding boxes and other information for all links on the page
         bounding_boxes = page.evaluate('''get_bounding_boxes_for_links_on_page(a_top_nodes)''')
         method = 'full bounding boxes (method succeeded)'
-    else:
+    except:
         print('failing... fallback method')
         bounding_boxes = get_bounding_boxes_fallback(page)
         method = 'a-restricted bounding boxes (fallback method)'
