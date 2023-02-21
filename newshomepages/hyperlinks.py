@@ -41,13 +41,15 @@ def load_helper_scripts(page):
 
 
 def get_css_attrs(node: Locator) -> Dict[str, str]:
+    """Gets all CSS attributes for an article bounding box."""
     css_attrs = node.evaluate('''node => getComputedStyle(node)''')
     return dict(filter(lambda x: not x[0].isdigit(), css_attrs.items()))
 
 
 def get_img_attrs(node: Locator) -> List[Dict[str, Union[str, int]]]:
+    """Gets bounding boxes and other attributes for all the images in the article bounding box."""
     output_img_data = []
-    imgs = node.locator('img').all()
+    imgs = node.query_selector_all('img')
     for img in imgs:
         output = {}
         output['img_position'] = img.bounding_box()
@@ -56,30 +58,35 @@ def get_img_attrs(node: Locator) -> List[Dict[str, Union[str, int]]]:
         output_img_data.append(output)
     return output_img_data
 
+
 def get_bounding_boxes_fallback(page):
+    """Get bounding boxes using a two-tiered approach that (1) attempts to get more exact coordinates using
+    javascript, and if this doesn't work (e.g. if some websites use an outdated javascript, or something)
+    then (2) use a Playwright-based approach that is slower and less-precise.
+    """
     bounding_box_output = []
-    all_as = page.locator('a').all()
+    all_as = page.query_selector_all('a')
     for a in all_as:
         output = {}
         try:
             output['position'] = a.bounding_box()
-        except:
+        except Exception:
             output['position'] = 'fallback method failed'
         try:
             output['href'] = a.evaluate('a => a.href')
-        except:
+        except Exception:
             output['href'] = 'fallback method failed'
         try:
             output['img'] = get_img_attrs(a)
-        except:
+        except Exception:
             output['img'] = 'fallback method failed'
         try:
             output['css'] = get_css_attrs(a)
-        except:
+        except Exception:
             output['css'] = 'fallback method failed'
         try:
             output['text'] = a.evaluate('a => get_text_of_node(a)')
-        except:
+        except Exception:
             output['text'] = 'fallback method failed'
         bounding_box_output.append(output)
     return bounding_box_output
@@ -89,7 +96,12 @@ def get_bounding_boxes_fallback(page):
 @click.argument("handle")
 @click.option("-o", "--output-dir", "output_dir", default="./")
 @click.option("--timeout", "timeout", default="180")
-def cli(handle: str, output_dir: str, timeout: str = "180"):
+@click.option("--fallback", "use_playwright", is_flag=True,
+              help="Flag to automatically use the fallback mechanism for collecting bounding boxes. "
+                   "If true, get bounding boxes and related article information using Playwright functionality."
+                   "We suspect it is more reliable across sites, generally, but native JS "
+                   "(faster, more precise, possibly less relaible). If False, .")
+def cli(handle: str, output_dir: str, timeout: str = "180", use_playwright: bool = False):
     """Save all hyperlinks as JSON for a site or bundle."""
     # Get the site
     site = utils.get_site(handle)
@@ -101,7 +113,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
         context = browser.new_context(user_agent=utils.get_user_agent())
 
         # Get links
-        link_list = _get_links(context, site, timeout=int(timeout))
+        link_list = _get_links(context, site, timeout=int(timeout), use_playwright=use_playwright)
 
         # Close the browser
         context.close()
@@ -112,7 +124,7 @@ def cli(handle: str, output_dir: str, timeout: str = "180"):
 
 
 @retry(tries=3, delay=5, backoff=2)
-def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
+def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180, use_playwright: bool = False):
     print(f"Getting hyperlinks from {data['url']}")
     # Open a page
     page = context.new_page()
@@ -125,15 +137,19 @@ def _get_links(context: BrowserContext, data: typing.Dict, timeout: int = 180):
     load_helper_scripts(page)
 
     # retrieve this data from the page object
-    try:
-        print('method 1')
-        # for each <a> on the page, get the upper most child in the DOM that doesn't have any other links in the subtree
-        page.evaluate(get_link_divs_js)
-        # get bounding boxes and other information for all links on the page
-        bounding_boxes = page.evaluate('''get_bounding_boxes_for_links_on_page(a_top_nodes)''')
-        method = 'full bounding boxes (method succeeded)'
-    except:
-        print('failing... fallback method')
+    js_worked = True
+    if not use_playwright:
+        try:
+            # for each <a> on the page, get the upper-most child in the DOM that doesn't have any other links in the subtree
+            page.evaluate(get_link_divs_js)
+            # get bounding boxes and other information for all links on the page
+            bounding_boxes = page.evaluate('''get_bounding_boxes_for_links_on_page(a_top_nodes)''')
+            method = 'full bounding boxes (method succeeded)'
+        except Exception:
+            js_worked = False
+
+    if use_playwright or (not js_worked):
+        print('falling back to playwright to get bounding boxes...')
         bounding_boxes = get_bounding_boxes_fallback(page)
         method = 'a-restricted bounding boxes (fallback method)'
 
