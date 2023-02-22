@@ -3,11 +3,11 @@ from pathlib import Path
 
 import click
 from playwright.sync_api import sync_playwright
-from playwright.sync_api import ElementHandle
+from playwright.sync_api import ElementHandle, FloatRect
 from playwright.sync_api._generated import BrowserContext
 from retry import retry
 from rich import print
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Optional
 
 from . import utils
 
@@ -46,15 +46,13 @@ def get_css_attrs(node: ElementHandle) -> Dict[str, str]:
     return dict(filter(lambda x: not x[0].isdigit(), css_attrs.items()))
 
 
-def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[Dict[str, float], str]]]:
+def get_img_attrs(node: ElementHandle) -> List[Dict[str, Optional[FloatRect]]]:
     """Get bounding boxes and other attributes for all the images in the article bounding box."""
     output_img_data = []
     imgs = node.query_selector_all('img')
     for img in imgs:
         output = {}
         bb = img.bounding_box()
-        if bb is not None:
-            bb = {k: float(v) for k, v in dict(bb).items()}
         output['img_position'] = bb
         output['img_src'] = img.evaluate('''node => node.src''')
         output['img_text'] = img.evaluate('''node=> node.alt.trim()''')
