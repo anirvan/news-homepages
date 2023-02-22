@@ -46,7 +46,7 @@ def get_css_attrs(node: ElementHandle) -> Dict[str, str]:
     return dict(filter(lambda x: not x[0].isdigit(), css_attrs.items()))
 
 
-def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[Dict[str, float]]], str]:
+def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[Dict[str, float], str]]]:
     """Get bounding boxes and other attributes for all the images in the article bounding box."""
     output_img_data = []
     imgs = node.query_selector_all('img')
