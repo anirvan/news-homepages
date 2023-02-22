@@ -46,14 +46,16 @@ def get_css_attrs(node: ElementHandle) -> Dict[str, str]:
     return dict(filter(lambda x: not x[0].isdigit(), css_attrs.items()))
 
 
-def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[str, int, float]]]:
+def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[Dict[str, float]]], str]:
     """Get bounding boxes and other attributes for all the images in the article bounding box."""
     output_img_data = []
     imgs = node.query_selector_all('img')
     for img in imgs:
         output = {}
         bb = img.bounding_box()
-        output['img_position'] = {k: float(v) for k, v in bb.items()}
+        if bb is not None:
+            bb = {k: float(v) for k, v in dict(bb).items()}
+        output['img_position'] = bb
         output['img_src'] = img.evaluate('''node => node.src''')
         output['img_text'] = img.evaluate('''node=> node.alt.trim()''')
         output_img_data.append(output)
