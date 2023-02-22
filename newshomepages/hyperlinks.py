@@ -7,7 +7,7 @@ from playwright.sync_api import ElementHandle, FloatRect
 from playwright.sync_api._generated import BrowserContext
 from retry import retry
 from rich import print
-from typing import List, Union, Dict, Optional
+from typing import List, Dict, Optional
 
 from . import utils
 
