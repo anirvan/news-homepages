@@ -52,7 +52,7 @@ def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[str, int]]]:
     imgs = node.query_selector_all('img')
     for img in imgs:
         output = {}
-        output['img_position'] = img.bounding_box()
+        output['img_position'] = dict(img.bounding_box())
         output['img_src'] = img.evaluate('''node => node.src''')
         output['img_text'] = img.evaluate('''node=> node.alt.trim()''')
         output_img_data.append(output)
