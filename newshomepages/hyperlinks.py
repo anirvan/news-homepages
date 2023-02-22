@@ -3,7 +3,7 @@ from pathlib import Path
 
 import click
 from playwright.sync_api import sync_playwright
-from playwright.sync_api import Locator
+from playwright.sync_api import ElementHandle
 from playwright.sync_api._generated import BrowserContext
 from retry import retry
 from rich import print
@@ -40,14 +40,14 @@ def load_helper_scripts(page):
         page.evaluate(f.read())
 
 
-def get_css_attrs(node: Locator) -> Dict[str, str]:
-    """Gets all CSS attributes for an article bounding box."""
+def get_css_attrs(node: ElementHandle) -> Dict[str, str]:
+    """Get all CSS attributes for an article bounding box."""
     css_attrs = node.evaluate('''node => getComputedStyle(node)''')
     return dict(filter(lambda x: not x[0].isdigit(), css_attrs.items()))
 
 
-def get_img_attrs(node: Locator) -> List[Dict[str, Union[str, int]]]:
-    """Gets bounding boxes and other attributes for all the images in the article bounding box."""
+def get_img_attrs(node: ElementHandle) -> List[Dict[str, Union[str, int]]]:
+    """Get bounding boxes and other attributes for all the images in the article bounding box."""
     output_img_data = []
     imgs = node.query_selector_all('img')
     for img in imgs:
@@ -60,9 +60,10 @@ def get_img_attrs(node: Locator) -> List[Dict[str, Union[str, int]]]:
 
 
 def get_bounding_boxes_fallback(page):
-    """Get bounding boxes using a two-tiered approach that (1) attempts to get more exact coordinates using
-    javascript, and if this doesn't work (e.g. if some websites use an outdated javascript, or something)
-    then (2) use a Playwright-based approach that is slower and less-precise.
+    """Get bounding boxes using a two-tiered approach.
+
+    Attempts to get more exact coordinates using javascript, and if this doesn't work (e.g. if some websites use an
+    outdated javascript, or something) then use a Playwright-based approach that is slower and less-precise.
     """
     bounding_box_output = []
     all_as = page.query_selector_all('a')
